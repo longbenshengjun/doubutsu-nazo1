@@ -10626,8 +10626,13 @@ function tick(ts) {
   }
   requestAnimationFrame(tick);
 }
+function placeFromText(txt) {
+  if (txt.startsWith(CONFIG.QR_PREFIX)) return txt.slice(CONFIG.QR_PREFIX.length);
+  try { const u = new URL(txt); if (u.pathname.includes('doubutsu-nazo1')) return u.searchParams.get('p'); } catch (e) {}
+  return null;
+}
 function onCode(txt) {
-  const place = txt.startsWith(CONFIG.QR_PREFIX) ? txt.slice(CONFIG.QR_PREFIX.length) : null;
+  const place = placeFromText(txt);
   if (place === target()) { arrive(); return; }
   toast(place && PLACES[place] ? `ここは ${PLACES[place].name}だよ` : 'この QRは ちがうよ');
   speak('wrong_place');
@@ -10650,7 +10655,15 @@ function openPad(title, cb) { padCb = cb; padVal = ''; $('#padTitle').textConten
 function closePad() { $('#pad').classList.remove('show'); padCb = null; }
 $('#padCancel').onclick = closePad;
 
-showTitle();
+// iPadの カメラで ばしょの QRを よんで ひらいたとき
+(function () {
+  let p = null;
+  try { p = new URLSearchParams(location.search).get('p'); if (p) history.replaceState(null, '', location.pathname); } catch (e) {}
+  const saved = load();
+  if (p && saved && PLACES[p]) { S = saved; updateHeader(); if (S.arrived) { arrive(); return; } showGo(false); onCode(CONFIG.QR_PREFIX + p); return; }
+  showTitle();
+  if (p && p !== 'nikoniko') toast('さきに コースを えらんでね');
+})();
 </script>
 </body>
 </html>
